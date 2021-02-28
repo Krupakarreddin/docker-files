@@ -1,0 +1,54 @@
+# escape=`
+
+ARG DOTNET_VERSION=5.0.3
+ARG ASPNET_VERSION=5.0.3
+
+# Installer image
+FROM mcr.microsoft.com/windows/servercore:20H2-amd64 AS installer
+ARG DOTNET_VERSION
+ARG ASPNET_VERSION
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Retrieve .NET Runtime
+ADD https://dotnetcli.azureedge.net/dotnet/Runtime/5.0.3/dotnet-runtime-5.0.3-win-x64.zip dotnet.zip 
+ADD https://dotnetcli.azureedge.net/dotnet/aspnetcore/Runtime/5.0.3/aspnetcore-runtime-5.0.3-win-x64.zip aspnetcore.zip 
+ADD https://builds.openlogic.com/downloadJDK/openlogic-openjdk-jre/11.0.8%2B10/openlogic-openjdk-jre-11.0.8%2B10-windows-x64.zip java.zip
+
+RUN mkdir dotnet; `
+    tar -C dotnet -oxzf dotnet.zip; `
+    Remove-Item -Force dotnet.zip; `
+    chdir /; `
+    mkdir dotnet/shared/Microsoft.AspNetCore.App; `
+    tar -C dotnet -oxzf aspnetcore.zip ./shared/Microsoft.AspNetCore.App; `
+    Remove-Item -Force aspnetcore.zip; `
+    chdir /; `
+    mkdir java; `
+    tar -oxzf java.zip openlogic-openjdk-jre-11.0.8+10-win-x64; `
+    move openlogic-openjdk-jre-11.0.8+10-win-x64 java
+
+
+
+# Runtime image
+FROM mcr.microsoft.com/windows/nanoserver:20H2-amd64
+ARG DOTNET_VERSION
+ARG ASPNET_VERSION
+
+ENV `
+    # Configure web servers to bind to port 80 when present
+    ASPNETCORE_URLS=http://+:80 `
+    # Enable detection of running in a container
+    DOTNET_RUNNING_IN_CONTAINER=true `
+    DOTNET_VERSION=$DOTNET_VERSION `
+    ASPNET_VERSION=$ASPNET_VERSION
+
+# In order to set system PATH, ContainerAdministrator must be used
+USER ContainerAdministrator
+RUN setx /M PATH "%PATH%;C:\Program Files\dotnet"
+RUN setx -m JAVA_HOME "C:\Program Files\java"
+RUN setx /M PATH "%JAVA_HOME%\bin;%PATH%"
+USER ContainerUser
+
+COPY --from=installer ["/dotnet", "/Program Files/dotnet"]
+COPY --from=installer ["/dotnet/shared/Microsoft.AspNetCore.App", "/Program Files/dotnet/shared/Microsoft.AspNetCore.App"]
+COPY --from=installer ["/java/openlogic-openjdk-jre-11.0.8+10-win-x64", "/Program Files/java"]
