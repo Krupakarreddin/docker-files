@@ -11,8 +11,8 @@ ARG ASPNET_VERSION
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 # Retrieve .NET Runtime
-ADD https://dotnetcli.azureedge.net/dotnet/Runtime/5.0.3/dotnet-runtime-5.0.3-win-x64.zip dotnet.zip 
-ADD https://dotnetcli.azureedge.net/dotnet/aspnetcore/Runtime/5.0.3/aspnetcore-runtime-5.0.3-win-x64.zip aspnetcore.zip 
+ADD https://dotnetcli.azureedge.net/dotnet/Runtime/${DOTNET_VERSION}/dotnet-runtime-${DOTNET_VERSION}-win-x64.zip dotnet.zip 
+ADD https://dotnetcli.azureedge.net/dotnet/aspnetcore/Runtime/${ASPNET_VERSION}/aspnetcore-runtime-${ASPNET_VERSION}-win-x64.zip aspnetcore.zip 
 ADD https://builds.openlogic.com/downloadJDK/openlogic-openjdk-jre/11.0.8%2B10/openlogic-openjdk-jre-11.0.8%2B10-windows-x64.zip java.zip
 
 RUN mkdir dotnet; `
